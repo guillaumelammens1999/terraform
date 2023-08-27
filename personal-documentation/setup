@@ -1,0 +1,322 @@
+# Guide for joining AWS-Team Accenture
+## PREREQUISITS
+- Enterprise ID
+- BITLocker installed 
+
+### WEBBROWSER
+- default=microsoft edge
+
+### WSL
+
+https://www.how2shout.com/how-to/how-to-install-ubuntu-22-04-on-windows-11-or-10-wsl.html
+
+check windowssign --> search "Turn Windows feature on or off"
+check if "Windows for subsystem Linux" is checked! (In my case it wasn't)
+```console
+    wsl --install --web-download
+    wsl --install --distribution <distro>
+    powershell restart-service vmcompute
+
+```
+Install WSL extension and check the greenbox in vscode which distro you are running.
+
+### vscode & Git 
+
+```console
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+choco install git vscode
+```
+
+### TerraformSwitch
+installs the latest version of terraform and provides you with the command tfswitch , which will be helpfull for interacting with different terraform versions in different projects.
+ [tfswitch site url](https://tfswitch.warrensbox.com/Install/)      
+
+ ```console
+    $ curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash
+    + link aan path (PS: WSL baybeee)
+```
+### AWS-Vault
+
+The [AWS-Vault guide](https://kerneltalks.com/tools/securing-aws-credentials-in-wsl-using-aws-vault/) I used to setup my WSL with the credentials.
+
+Handy [Sentia Guide](https://wiki.sentia.cloud/display/SEAWSLZ/LZ+Terraform+-+Visual+Studio+Code+and+Git+Settings) for being in sync with the teams setup
+
+```console
+ sudo curl -L -o /usr/local/bin/aws-vault https://github.com/99designs/aws-vault/releases/download/v6.3.1/aws-vault-linux-amd64
+ sudo chmod 755 /usr/local/bin/aws-vault
+```
+
+
+ ```console
+    code ~/.aws/config
+
+        [default]
+    # If you use a custom profile and not "default", this mfa_serial will most likely be under your own profile name!
+    mfa_serial = arn:aws:iam::977812105359:mfa/filip.van.houtryve@be.sentia.com   # This is only necessary because we still have accounts using locksmith. You can remove this line if there is no locksmith left
+    region     = eu-central-1   # default region -- respected by aws sso profiles and regular profiles
+    format     = json           # default format -- respected by aws sso profiles and regular profiles
+ 
+# Example of a profile still using locksmith
+ 
+[profile diekeure-accept]
+  source_profile  = default
+  region          = eu-west-1
+  role_arn        = arn:aws:iam::860435703519:role/filip.van.houtryve@be.sentia.com
+  include_profile = <MY_PROFILE_NAME>  # this is only necessary if you don't use [default] !
+ 
+# Example of an account that uses SSO
+[profile sandbox]
+  sso_start_url  = https://sentia.awsapps.com/start
+  sso_region     = eu-west-1                        # <--- Region where SSO is located -- this will always be eu-west-1 in our case ( I assume )
+  sso_account_id = 264601019689                     # <--- Account ID of the AWS account you're connecting to
+  sso_role_name  = AWSAdministratorAccess           # <--- Name of the role you're assuming in the account. This is always the same one across accounts
+  region         = eu-west-1                        # <--- Region you want to be active when connecting to the account ( both CLI as web console ). Convenient for customers that are only active in Singapore or Frankfurt instead of Ireland for example
+  format         = json          
+
+#Guillaumeconfig files 30/03         
+[profile internalsandbox]
+  sso_start_url  = https://sentia.awsapps.com/start
+  sso_region     = eu-west-1                        
+  sso_account_id = 570752136874                    
+  sso_role_name  = AWSAdministratorAccess          
+  region         = eu-central-1                        
+  format         = json                            
+  
+  [profile aetn]
+  sso_start_url  = https://sentia.awsapps.com/start
+  sso_region     = eu-west-1                        
+  sso_account_id = 521811699963                  
+  sso_role_name  = AWSAdministratorAccess          
+  region         = eu-west-1                        
+  format         = json     %          
+```
+
+### ohmyzyzzz  
+
+install at [ohmyzsh-install](https://github.com/ohmyzsh/ohmyzsh)
+```console
+curl 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+wget 	sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fetch 	sh -c "$(fetch -o - https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+```
+
+
+path conf file = code ~/.zshrc 
+
+```console
+    # If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+export PATH=$PATH:/Users/jasperbleyaert/bin
+export PATH="/Users/jasperbleyaert/Library/Python/3.9/bin:$PATH"
+
+zsh_terraform() {
+  # break if there is no .terraform directory
+  if [[ -d .terraform ]]; then
+    local tf_workspace=$(/usr/local/bin/terraform workspace show)
+    echo -n "$tf_workspace"
+  fi
+}
+zsh_locksmith() {
+    echo -n "$AWS_SESSION_ACCOUNT_NAME"
+}
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="spaceship"
+
+load-tfswitch() {
+  local tfswitchrc_path=".tfswitchrc"
+
+  if [ -f "$tfswitchrc_path" ]; then
+    tfswitch
+  fi
+}
+add-zsh-hook chpwd load-tfswitch
+load-tfswitch
+
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git terraform)
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+## ALIASES
+
+alias zsh="code ~/.zshrc"
+
+alias tfi='terraform init'
+
+alias tfp='terraform plan' 
+
+alias tfp='terraform apply' 
+
+alias gcm='git checkout master; git pull'
+
+alias gp='git pull'
+
+alias gcb='git checkout -b'
+
+alias ga='git add'
+
+alias unv='unset AWS_VAULT'
+
+alias awv='aws-vault exec'
+
+## FUNCTIONS
+
+function gc {
+  git commit -m"$1"
+}
+
+function tfmoe {
+  echo -e "\nOutputs:"
+  grep -r "output \".*\"" $1 |awk '{print "\t",$2}' |tr -d '"'
+  echo -e "\nVariables:"
+  grep -r "variable \".*\"" $1 |awk '{print "\t",$2}' |tr -d '"'
+}
+
+function tfmoi {
+  touch $1/variables.tf
+  touch $1/outputs.tf
+  touch $1/main.tf
+}
+
+function tfws(){
+  NEW_WORKSPACE=${1%.*}
+  terraform workspace select $NEW_WORKSPACE
+}
+
+function tf(){
+  ACTION=$1
+  WORKSPACE=${2%.*}
+  VAR_FILE=$2
+
+  echo "Action: $ACTION"
+  echo "VAR_FILE: $VAR_FILE"
+  echo "Workspace: $WORKSPACE"
+
+  if [ "$2" == "" ] ; then
+    terraform ${ACTION}
+    return 
+  fi
+
+  if [[ -f .terraform/environment ]]; then
+    if [[ "$(cat .terraform/environment)" != "${WORKSPACE}" ]] ; then
+      tfws ${WORKSPACE}
+    fi
+  else
+    tfws ${WORKSPACE}
+  fi
+
+  if [[ -f ${VAR_FILE} ]] ; then
+    terraform ${ACTION} -var-file=${VAR_FILE} ${@:3}
+  else
+    stat ${VAR_FILE}
+    echo "${VAR_FILE} does not exist!"
+    terraform ${ACTION} ${@:3}
+  fi
+}
+
+```
+
+### Gitlab
+In wsl generate a SSH key. So you can commit push pull your local changes to the remote gitlab repo we will make.
+```console
+    git config --global user.email "guillaume.lammens@sentia.com"
+    git config --global user.name "guillaume lammens"   
+    git config --list 
+
+    ssh-keygen
+    --> Gitlab --> settings --> add sshkeys --> fill here the  id_rsa_public key
+```
+
+### recap
+Working 
+-WSL version 
+-AWS-Vault
+-Terraform
+-Gitlab 
+### 
+###
