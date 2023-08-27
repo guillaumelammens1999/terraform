@@ -1,9 +1,0 @@
- ../../infrastructure/eks/.terraform.lock.hcl
-        ../../infrastructure/eks/variables.tf
-   ../../infrastructure/keyrotation/.terraform.lock.hcl
-    ../../infrastructure/keyrotation/main.tf
- ../../infrastructure/s3/main.tf ../../infrastructure/eks/.terraform.lock.hcl
-        ../../infrastructure/eks/variables.tf
-   ../../infrastructure/keyrotation/.terraform.lock.hcl
-    ../../infrastructure/keyrotation/main.tf
- ../../infrastructure/s3/main.tf
